@@ -22,6 +22,28 @@ Hadamard_to_IBDs<-function(v){
   }else{
     v_less_7<-FALSE
   }
+  ##########################################
+  Moore_penrose_inverse_mine<-function(matrix){
+    N<-as.matrix(matrix)
+    NtN<-t(N)%*%N
+    NNt<-N%*%t(N)
+    eig_val<-eigen(NtN)$values
+    positive<-NULL
+    for(i in eig_val){
+      if(i>10^-7){
+        positive<-c(positive,TRUE)
+      }else{
+        positive<-c(positive,FALSE)
+      }
+    }
+    sigma<-1/sqrt(eig_val[eig_val>10^-7])
+    u<-eigen(NtN)$vectors[,positive,drop=FALSE]
+    v<-eigen(NNt)$vectors[,positive,drop=FALSE]
+    return(u%*%diag(sigma,nrow(t(v)))%*%t(v))
+  }
+
+
+  ##################
   factors_we_need<-function(v){
     v=prod(v)
     temp=prod(v)
@@ -175,7 +197,7 @@ Hadamard_to_IBDs<-function(v){
   comb_mat<-t(combn(v,2))
   p_matrix[c(comb_mat[,1],comb_mat[,2])]<-c(1,-1)
   ########## Variance covariance part
-  variances<-(p_matrix)%*%MASS::ginv(c_matrix)%*%t(p_matrix)
+  variances<-(p_matrix)%*%Moore_penrose_inverse_mine(c_matrix)%*%t(p_matrix)
   #######variance part
   var<-diag(variances)
   ########## avg variance
@@ -192,3 +214,4 @@ Hadamard_to_IBDs<-function(v){
     return(list_print)
   }
 }
+
